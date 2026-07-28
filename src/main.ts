@@ -1,6 +1,6 @@
 import './style.css'
 import { Midi } from '@tonejs/midi'
-import { parseMidiFile } from './midi/parseMidi'
+import { loadScoreFile, PdfNeedsConversionError } from './midi/loadScore'
 import { PianoRainRenderer } from './render/PianoRainRenderer'
 import { PianoPlayer } from './audio/PianoPlayer'
 import type { SongData } from './types'
@@ -12,13 +12,14 @@ app.innerHTML = `
     <header class="topbar">
       <div class="brand">
         <h1>钢琴雨生成器</h1>
-        <p>上传 MIDI，生成下落式钢琴雨 · 云端改动能同步</p>
+        <p>上传 MIDI / MusicXML，生成下落式钢琴雨</p>
       </div>
       <div class="actions">
         <label class="btn btn-primary file-btn">
-          选择 MIDI 文件
-          <input id="file-input" type="file" accept=".mid,.midi,audio/midi" />
+          选择曲谱文件
+          <input id="file-input" type="file" accept=".mid,.midi,.musicxml,.xml,.mxl,.pdf,audio/midi,application/pdf,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml" />
         </label>
+        <button class="btn" id="song-btn" type="button">爱的回归线</button>
         <button class="btn" id="demo-btn" type="button">加载示例曲</button>
       </div>
     </header>
@@ -28,7 +29,7 @@ app.innerHTML = `
         <canvas id="rain-canvas"></canvas>
         <div class="empty" id="empty">
           <h2>把谱变成雨</h2>
-          <p>手机 / 电脑都能改：上传 MIDI（.mid）即可。PDF 谱请先转成 MIDI。</p>
+          <p>可上传 MIDI / MusicXML，或点「爱的回归线」试听已转换曲目。自动识谱可能有个别错音。</p>
           <div class="legend">
             <span><i class="dot right"></i>右手</span>
             <span><i class="dot left"></i>左手</span>
@@ -60,6 +61,7 @@ app.innerHTML = `
 const canvas = document.querySelector<HTMLCanvasElement>('#rain-canvas')!
 const empty = document.querySelector<HTMLDivElement>('#empty')!
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
+const songBtn = document.querySelector<HTMLButtonElement>('#song-btn')!
 const demoBtn = document.querySelector<HTMLButtonElement>('#demo-btn')!
 const playBtn = document.querySelector<HTMLButtonElement>('#play-btn')!
 const stopBtn = document.querySelector<HTMLButtonElement>('#stop-btn')!
@@ -134,16 +136,22 @@ function escapeHtml(s: string): string {
 
 async function loadFile(file: File) {
   try {
-    songMeta.textContent = '正在解析 MIDI…'
-    const data = await parseMidiFile(file)
+    songMeta.textContent = `正在解析 ${file.name}…`
+    const data = await loadScoreFile(file)
     if (!data.notes.length) {
-      songMeta.textContent = '未找到可播放音符，请换一个 MIDI 文件'
+      songMeta.textContent = '未找到可播放音符，请换一份曲谱'
       return
     }
     setSong(data)
   } catch (err) {
     console.error(err)
-    songMeta.textContent = 'MIDI 解析失败，请确认文件格式正确'
+    if (err instanceof PdfNeedsConversionError) {
+      songMeta.textContent =
+        'PDF 不能直接生成钢琴雨：请用 MuseScore 导出 MIDI/MusicXML，或把该 PDF 发到云端对话，我帮你转。'
+      empty.classList.remove('hidden')
+      return
+    }
+    songMeta.textContent = err instanceof Error ? err.message : '曲谱解析失败，请确认格式正确'
   }
 }
 
@@ -290,12 +298,27 @@ async function loadDemo() {
   await loadFile(file)
 }
 
+async function loadBuiltinSong(url: string, displayName: string) {
+  try {
+    songMeta.textContent = `正在加载 ${displayName}…`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`无法加载 ${displayName}`)
+    const buf = await res.arrayBuffer()
+    const file = new File([buf], `${displayName}.mid`, { type: 'audio/midi' })
+    await loadFile(file)
+  } catch (err) {
+    console.error(err)
+    songMeta.textContent = err instanceof Error ? err.message : '内置曲目加载失败'
+  }
+}
+
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0]
   if (file) void loadFile(file)
   fileInput.value = ''
 })
 
+songBtn.addEventListener('click', () => void loadBuiltinSong('/songs/爱的回归线.mid', '爱的回归线'))
 demoBtn.addEventListener('click', () => void loadDemo())
 playBtn.addEventListener('click', () => void togglePlay())
 stopBtn.addEventListener('click', stop)
