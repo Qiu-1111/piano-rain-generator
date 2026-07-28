@@ -12,7 +12,7 @@ app.innerHTML = `
     <header class="topbar">
       <div class="brand">
         <h1>钢琴雨生成器</h1>
-        <p>上传 MIDI，生成下落式钢琴雨（PDF 谱需先转 MIDI）</p>
+        <p>上传 MIDI，生成下落式钢琴雨 · 云端改动能同步</p>
       </div>
       <div class="actions">
         <label class="btn btn-primary file-btn">
@@ -28,7 +28,7 @@ app.innerHTML = `
         <canvas id="rain-canvas"></canvas>
         <div class="empty" id="empty">
           <h2>把谱变成雨</h2>
-          <p>请上传 MIDI（.mid）。五线谱 PDF 需先用 MuseScore 等转成 MIDI。</p>
+          <p>手机 / 电脑都能改：上传 MIDI（.mid）即可。PDF 谱请先转成 MIDI。</p>
           <div class="legend">
             <span><i class="dot right"></i>右手</span>
             <span><i class="dot left"></i>左手</span>
