@@ -1,0 +1,19 @@
+{
+  "name": "piano-rain-generator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  },
+  "dependencies": {
+    "@tonejs/midi": "^2.0.28",
+    "tone": "^15.1.22"
+  }
+}
