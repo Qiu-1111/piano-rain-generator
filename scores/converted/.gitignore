@@ -1,2 +1,4 @@
-*
-!.gitignore
+# Ignore OMR work products; keep final exports tracked when force-added intentionally.
+_*/
+*.omr
+*.log
