@@ -6,14 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "convert:pdf": "bash tools/pdf_to_midi.sh"
   },
   "devDependencies": {
+    "@types/jszip": "^3.4.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
+    "jszip": "^3.10.1",
     "tone": "^15.1.22"
   }
 }

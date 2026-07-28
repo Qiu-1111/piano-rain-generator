@@ -1,6 +1,6 @@
 import './style.css'
 import { Midi } from '@tonejs/midi'
-import { parseMidiFile } from './midi/parseMidi'
+import { loadScoreFile, PdfNeedsConversionError } from './midi/loadScore'
 import { PianoRainRenderer } from './render/PianoRainRenderer'
 import { PianoPlayer } from './audio/PianoPlayer'
 import type { SongData } from './types'
@@ -12,12 +12,12 @@ app.innerHTML = `
     <header class="topbar">
       <div class="brand">
         <h1>钢琴雨生成器</h1>
-        <p>上传 MIDI，生成下落式钢琴雨 · 云端改动能同步</p>
+        <p>上传 MIDI / MusicXML，生成下落式钢琴雨</p>
       </div>
       <div class="actions">
         <label class="btn btn-primary file-btn">
-          选择 MIDI 文件
-          <input id="file-input" type="file" accept=".mid,.midi,audio/midi" />
+          选择曲谱文件
+          <input id="file-input" type="file" accept=".mid,.midi,.musicxml,.xml,.mxl,.pdf,audio/midi,application/pdf,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml" />
         </label>
         <button class="btn" id="demo-btn" type="button">加载示例曲</button>
       </div>
@@ -28,7 +28,7 @@ app.innerHTML = `
         <canvas id="rain-canvas"></canvas>
         <div class="empty" id="empty">
           <h2>把谱变成雨</h2>
-          <p>手机 / 电脑都能改：上传 MIDI（.mid）即可。PDF 谱请先转成 MIDI。</p>
+          <p>支持 MIDI、MusicXML。PDF 五线谱请先用 MuseScore 导出，或发到云端对话帮你转成 MIDI。</p>
           <div class="legend">
             <span><i class="dot right"></i>右手</span>
             <span><i class="dot left"></i>左手</span>
@@ -134,16 +134,22 @@ function escapeHtml(s: string): string {
 
 async function loadFile(file: File) {
   try {
-    songMeta.textContent = '正在解析 MIDI…'
-    const data = await parseMidiFile(file)
+    songMeta.textContent = `正在解析 ${file.name}…`
+    const data = await loadScoreFile(file)
     if (!data.notes.length) {
-      songMeta.textContent = '未找到可播放音符，请换一个 MIDI 文件'
+      songMeta.textContent = '未找到可播放音符，请换一份曲谱'
       return
     }
     setSong(data)
   } catch (err) {
     console.error(err)
-    songMeta.textContent = 'MIDI 解析失败，请确认文件格式正确'
+    if (err instanceof PdfNeedsConversionError) {
+      songMeta.textContent =
+        'PDF 不能直接生成钢琴雨：请用 MuseScore 导出 MIDI/MusicXML，或把该 PDF 发到云端对话，我帮你转。'
+      empty.classList.remove('hidden')
+      return
+    }
+    songMeta.textContent = err instanceof Error ? err.message : '曲谱解析失败，请确认格式正确'
   }
 }
 
