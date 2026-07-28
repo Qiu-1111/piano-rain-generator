@@ -19,6 +19,7 @@ app.innerHTML = `
           选择曲谱文件
           <input id="file-input" type="file" accept=".mid,.midi,.musicxml,.xml,.mxl,.pdf,audio/midi,application/pdf,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml" />
         </label>
+        <button class="btn" id="song-btn" type="button">爱的回归线</button>
         <button class="btn" id="demo-btn" type="button">加载示例曲</button>
       </div>
     </header>
@@ -28,7 +29,7 @@ app.innerHTML = `
         <canvas id="rain-canvas"></canvas>
         <div class="empty" id="empty">
           <h2>把谱变成雨</h2>
-          <p>支持 MIDI、MusicXML。PDF 五线谱请先用 MuseScore 导出，或发到云端对话帮你转成 MIDI。</p>
+          <p>可上传 MIDI / MusicXML，或点「爱的回归线」试听已转换曲目。自动识谱可能有个别错音。</p>
           <div class="legend">
             <span><i class="dot right"></i>右手</span>
             <span><i class="dot left"></i>左手</span>
@@ -60,6 +61,7 @@ app.innerHTML = `
 const canvas = document.querySelector<HTMLCanvasElement>('#rain-canvas')!
 const empty = document.querySelector<HTMLDivElement>('#empty')!
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
+const songBtn = document.querySelector<HTMLButtonElement>('#song-btn')!
 const demoBtn = document.querySelector<HTMLButtonElement>('#demo-btn')!
 const playBtn = document.querySelector<HTMLButtonElement>('#play-btn')!
 const stopBtn = document.querySelector<HTMLButtonElement>('#stop-btn')!
@@ -296,12 +298,27 @@ async function loadDemo() {
   await loadFile(file)
 }
 
+async function loadBuiltinSong(url: string, displayName: string) {
+  try {
+    songMeta.textContent = `正在加载 ${displayName}…`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`无法加载 ${displayName}`)
+    const buf = await res.arrayBuffer()
+    const file = new File([buf], `${displayName}.mid`, { type: 'audio/midi' })
+    await loadFile(file)
+  } catch (err) {
+    console.error(err)
+    songMeta.textContent = err instanceof Error ? err.message : '内置曲目加载失败'
+  }
+}
+
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0]
   if (file) void loadFile(file)
   fileInput.value = ''
 })
 
+songBtn.addEventListener('click', () => void loadBuiltinSong('/songs/爱的回归线.mid', '爱的回归线'))
 demoBtn.addEventListener('click', () => void loadDemo())
 playBtn.addEventListener('click', () => void togglePlay())
 stopBtn.addEventListener('click', stop)

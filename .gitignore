@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Score conversion intermediates / originals
+scores/incoming/
+scores/converted/_*/
+scores/converted/*.omr
+*.log
+
